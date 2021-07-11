@@ -1,0 +1,8 @@
+{
+    "ssid": "Network name",
+    "ssid_password": "Network password",
+    "sensor_name": "outdoor",
+    "endpoint": "https://example.com/api/weather",
+    "api_key": "abc123",
+    "local_only": false
+}

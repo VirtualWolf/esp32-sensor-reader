@@ -46,21 +46,18 @@ class Sensor():
 
                         logger.log('Sensor read at %s, new values: %s & %s%%' % (self.timestamp, self.temperature, self.humidity))
 
-                        try:
-                            post_update.send({
-                                'sensor_name': self.name,
-                                'timestamp': self.timestamp,
-                                'temperature': self.temperature,
-                                'humidity': self.humidity
-                            })
-                        except OSError as e:
-                            logger.log('Failed to post update: ' + str(e))
+                        post_update.send({
+                            'sensor_name': self.name,
+                            'timestamp': self.timestamp,
+                            'temperature': self.temperature,
+                            'humidity': self.humidity
+                        })
 
                 gc.collect()
                 #logger.log('Free memory: %s, allocated memory: %s' % (gc.mem_free(), gc.mem_alloc()))
 
                 utime.sleep(30)
-            except OSError as e:
+            except Exception as e:
                 logger.log('Failed to read sensor: '  + str(e))
                 utime.sleep(30)
 

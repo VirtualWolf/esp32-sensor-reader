@@ -12,26 +12,31 @@ SERVER_PORT = 80
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((SERVER_HOST, SERVER_PORT))
-server.listen(1)
+server.listen(5)
 
 logger.log('Listening on port %s ...' % SERVER_PORT)
 
-while True:
-    # Wait for client connections
-    client_connection, client_address = server.accept()
+def handle_request(client):
+    logger.log('New thread spawned to handle request')
 
-    logger.log('Got a connection from %s!' % client_address[0])
+    r = client.recv(4096)
 
-    # Get the client request
-    request = client_connection.recv(1024).decode()
+    if len(r) == 0:
+        client.close()
+        return
 
-    # Send HTTP response
     response = ('HTTP/1.0 200 OK\n'
                 'Content-Type: application/json\n\n'
                 '%s') % (outdoor.get_current_data())
 
-    client_connection.sendall(response.encode())
-    client_connection.close()
+    client.send(response)
+    client.close()
 
-# Close socket
+while True:
+    (clientsocket, client_address) = server.accept()
+
+    logger.log('Got a connection from %s' % client_address[0])
+
+    _thread.start_new_thread(handle_request, (clientsocket, ))
+
 server.close()

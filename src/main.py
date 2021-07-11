@@ -2,9 +2,14 @@ import usocket as socket
 import _thread
 import sensor
 import logger
+import post_update
+import set_time
 
 outdoor = sensor.Sensor()
+
 _thread.start_new_thread(outdoor.read_sensor, ())
+_thread.start_new_thread(post_update.queue.process_queue, ())
+_thread.start_new_thread(set_time.update, ())
 
 SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 80

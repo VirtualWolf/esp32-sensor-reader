@@ -3,7 +3,6 @@ import utime
 from machine import Pin
 import dht
 import ujson
-import gc
 import post_update
 import config
 import logger
@@ -20,6 +19,7 @@ class Sensor():
     def read_sensor(self):
         while True:
             logger.log('Reading sensor...')
+
             try:
                 sensor = dht.DHT22(Pin(26))
                 sensor.measure()
@@ -54,12 +54,12 @@ class Sensor():
                         })
 
                 gc.collect()
-                #logger.log('Free memory: %s, allocated memory: %s' % (gc.mem_free(), gc.mem_alloc()))
+                logger.log('Free memory: %s, allocated memory: %s' % (gc.mem_free(), gc.mem_alloc()))
 
-                utime.sleep(30)
             except Exception as e:
-                logger.log('Failed to read sensor: '  + str(e))
-                utime.sleep(30)
+                logger.log('Failed to read sensor: '  + str(e), write_to_log=True)
+
+            utime.sleep(30)
 
     def get_current_data(self):
         current_data = ujson.dumps({

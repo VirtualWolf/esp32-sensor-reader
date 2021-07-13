@@ -1,5 +1,5 @@
 from ntptime import settime
-from utime import sleep
+import utime
 import logger
 
 def update():
@@ -8,4 +8,4 @@ def update():
         settime()
 
         # Sleep for 24 hours
-        sleep(86400)
+        utime.sleep(86400)

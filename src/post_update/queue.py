@@ -20,7 +20,7 @@ def write_to_queue(payload):
 
         file.close()
     except Exception as e:
-        logger.log('Failed to write file: ' + e)
+        logger.log('Failed to write file: %s' % e, write_to_log=True)
 
 def process_queue():
     while True:
@@ -40,6 +40,6 @@ def process_queue():
 
                 os.remove('queue/%s' % file)
             except Exception as e:
-                logger.log(e)
+                logger.log('Failed to remove file: ' %  e, write_to_log=True)
 
         utime.sleep(300)

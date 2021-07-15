@@ -3,6 +3,7 @@ import utime
 from machine import Pin
 import dht
 import ujson
+import uasyncio as asyncio
 import post_update
 import config
 import logger
@@ -16,7 +17,7 @@ class Sensor():
         self.timestamp = 0
         self.name = c['sensor_name']
 
-    def read_sensor(self):
+    async def read_sensor(self):
         while True:
             logger.log('Reading sensor...')
 
@@ -46,20 +47,32 @@ class Sensor():
 
                         logger.log('Sensor read at %s, new values: %s & %s%%' % (self.timestamp, self.temperature, self.humidity))
 
-                        post_update.send({
-                            'sensor_name': self.name,
-                            'timestamp': self.timestamp,
-                            'temperature': self.temperature,
-                            'humidity': self.humidity
-                        })
-
                 gc.collect()
-                logger.log('Free memory: %s, allocated memory: %s' % (gc.mem_free(), gc.mem_alloc()))
+                # logger.log('Free memory: %s, allocated memory: %s' % (gc.mem_free(), gc.mem_alloc()))
 
             except Exception as e:
                 logger.log('Failed to read sensor: '  + str(e), write_to_log=True)
 
-            utime.sleep(30)
+            await asyncio.sleep(30)
+
+    async def send_current_data(self):
+        while True:
+            payload = {
+                'sensor_name': self.name,
+                'timestamp': self.timestamp,
+                'temperature': self.temperature,
+                'humidity': self.humidity
+            }
+
+            if payload['timestamp'] != 0:
+                try:
+                    post_update.send(payload)
+                except Exception as e:
+                    logger.log('Failed to post update, writing to queue as %s.json: %s' % (str(payload['timestamp']), e), write_to_log=True)
+                    post_update.queue.write_to_queue(payload)
+
+            await asyncio.sleep(30)
+
 
     def get_current_data(self):
         current_data = ujson.dumps({

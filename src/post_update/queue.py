@@ -1,6 +1,7 @@
 import os
 import ujson
 import utime
+import uasyncio as asyncio
 import logger
 import post_update
 
@@ -22,13 +23,13 @@ def write_to_queue(payload):
     except Exception as e:
         logger.log('Failed to write file: %s' % e, write_to_log=True)
 
-def process_queue():
+async def process_queue():
     while True:
         logger.log('Processing queue...')
 
         files = os.listdir('queue')
 
-        for file in (files):
+        for file in files:
             logger.log('Reading %s from queue' % file)
 
             content = open('queue/%s' % file, 'r')
@@ -38,8 +39,11 @@ def process_queue():
             try:
                 post_update.send(json)
 
-                os.remove('queue/%s' % file)
+                try:
+                    os.remove('queue/%s' % file)
+                except Exception as e:
+                    logger.log('Failed to remove file: %s' %  e, write_to_log=True)
             except Exception as e:
-                logger.log('Failed to remove file: ' %  e, write_to_log=True)
+                logger.log('Failed to re-post update: %s' % e)
 
-        utime.sleep(300)
+        await asyncio.sleep(300)

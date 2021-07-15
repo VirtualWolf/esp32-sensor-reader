@@ -6,8 +6,6 @@ import post_update
 import set_time
 
 try:
-    sensor = sensor.Sensor()
-
     loop = asyncio.get_event_loop()
 
     loop.create_task(sensor.read_sensor())

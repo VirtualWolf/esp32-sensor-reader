@@ -10,76 +10,76 @@ import logger
 
 c = config.read_configuration()
 
-class Sensor():
-    def __init__(self):
-        self.temperature = 0
-        self.humidity = 0
-        self.timestamp = 0
-        self.name = c['sensor_name']
+temperature = 0
+humidity = 0
+timestamp = 0
+name = c['sensor_name']
 
-    async def read_sensor(self):
-        while True:
-            logger.log('Reading sensor...')
+async def read_sensor():
+    global temperature
+    global humidity
+    global timestamp
 
-            try:
-                sensor = dht.DHT22(Pin(26))
-                sensor.measure()
+    while True:
+        logger.log('Reading sensor...')
 
-                temperature = sensor.temperature()
-                humidity = sensor.humidity()
+        try:
+            sensor = dht.DHT22(Pin(26))
+            sensor.measure()
 
-                if self.temperature == 0 and self.humidity == 0:
-                    self.temperature = temperature
-                    self.humidity = humidity
-                    # Embedded systems epoch is 2000-01-01 00:00:00 UTC, so we need
-                    # to add 946684800 seconds onto it to turn it into a UNIX epoch
-                    # timestamp
-                    self.timestamp = (utime.time() + 946684800) * 1000
+            temperature = sensor.temperature()
+            humidity = sensor.humidity()
 
-                    logger.log('First reading, values are %s˚ & %s%%' % (self.temperature, self.humidity))
+            if temperature == 0 and humidity == 0:
+                # Embedded systems epoch is 2000-01-01 00:00:00 UTC, so we need
+                # to add 946684800 seconds onto it to turn it into a UNIX epoch
+                # timestamp
+                timestamp = (utime.time() + 946684800) * 1000
+
+                logger.log('First reading, values are %s˚ & %s%%' % (temperature, humidity))
+            else:
+                if abs(temperature - temperature) > 0.3:
+                    logger.log('Skipping because difference is too large. Currently %s, got %s' % (temperature, temperature))
                 else:
-                    if abs(temperature - self.temperature) > 0.3:
-                        logger.log('Skipping because difference is too large. Currently %s, got %s' % (self.temperature, temperature))
-                    else:
-                        self.temperature = sensor.temperature()
-                        self.humidity = sensor.humidity()
-                        self.timestamp = (utime.time() + 946684800) * 1000
+                    temperature = sensor.temperature()
+                    humidity = sensor.humidity()
+                    timestamp = (utime.time() + 946684800) * 1000
 
-                        logger.log('Sensor read at %s, new values: %s & %s%%' % (self.timestamp, self.temperature, self.humidity))
+                    logger.log('Sensor read at %s, new values: %s & %s%%' % (timestamp, temperature, humidity))
 
-                gc.collect()
-                # logger.log('Free memory: %s, allocated memory: %s' % (gc.mem_free(), gc.mem_alloc()))
+            gc.collect()
+            # logger.log('Free memory: %s, allocated memory: %s' % (gc.mem_free(), gc.mem_alloc()))
 
+        except Exception as e:
+            logger.log('Failed to read sensor: '  + str(e), write_to_log=True)
+
+        await asyncio.sleep(30)
+
+async def send_current_data():
+    while True:
+        payload = {
+            'sensor_name': name,
+            'timestamp': timestamp,
+            'temperature': temperature,
+            'humidity': humidity
+        }
+
+        if payload['timestamp'] != 0:
+            try:
+                post_update.send(payload)
             except Exception as e:
-                logger.log('Failed to read sensor: '  + str(e), write_to_log=True)
+                logger.log('Failed to post update, writing to queue as %s.json: %s' % (str(payload['timestamp']), e), write_to_log=True)
+                post_update.queue.write_to_queue(payload)
 
-            await asyncio.sleep(30)
-
-    async def send_current_data(self):
-        while True:
-            payload = {
-                'sensor_name': self.name,
-                'timestamp': self.timestamp,
-                'temperature': self.temperature,
-                'humidity': self.humidity
-            }
-
-            if payload['timestamp'] != 0:
-                try:
-                    post_update.send(payload)
-                except Exception as e:
-                    logger.log('Failed to post update, writing to queue as %s.json: %s' % (str(payload['timestamp']), e), write_to_log=True)
-                    post_update.queue.write_to_queue(payload)
-
-            await asyncio.sleep(30)
+        await asyncio.sleep(30)
 
 
-    def get_current_data(self):
-        current_data = ujson.dumps({
-            "name": self.name,
-            "timestamp": self.timestamp,
-            "temperature": self.temperature,
-            "humidity": self.humidity
-        })
+def get_current_data():
+    current_data = ujson.dumps({
+        "name": name,
+        "timestamp": timestamp,
+        "temperature": temperature,
+        "humidity": humidity
+    })
 
-        return current_data
+    return current_data

@@ -4,7 +4,6 @@ import logger
 
 async def serve(reader, writer):
     req = await reader.readline()
-    logger.log(req)
 
     while True:
         h = await reader.readline()
@@ -13,7 +12,7 @@ async def serve(reader, writer):
 
     response = (b'HTTP/1.1 200 OK\n'
                 b'Content-Type: application/json\n\n'
-                b'%s' % {'hello': 'world'})
+                b'%s' % sensor.get_current_data())
 
     writer.write(response)
     await writer.drain()

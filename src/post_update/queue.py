@@ -1,6 +1,5 @@
 import os
 import ujson
-import utime
 import uasyncio as asyncio
 import logger
 import post_update

@@ -46,19 +46,41 @@ async def get_log(writer):
 
     gc.collect()
 
-async def clear_log(writer):
-    with open('log', 'w'):
-        pass
+async def clear_log(writer, is_authorised_request):
+    if (is_authorised_request):
+        with open('log', 'w'):
+            pass
 
-    logger.log('Log file cleared', write_to_log=True)
-    await send_response(writer, 'Log file cleared!', 'text/plain')
+        logger.log('Log file cleared', write_to_log=True)
+        await send_response(writer, 'Log file cleared!', 'text/plain')
+    else:
+        await send_403(writer)
 
-async def reset_board(writer):
-    logger.log('Board reset requested', write_to_log=True)
-    await send_response(writer, 'Resetting board...', 'text/plain')
-    await asyncio.sleep(2)
+async def get_queue(writer):
+    queue = '\n'.join(os.listdir('queue'))
+    await send_response(writer, queue, 'text/plain')
 
-    machine.reset()
+async def clear_queue(writer, is_authorised_request):
+    if is_authorised_request:
+        queue = os.listdir('queue')
+
+        for file in queue:
+            logger.log('Removing %s...' % file)
+            os.remove('queue/%s' % file)
+
+        await send_response(writer, 'Queue cleared', 'text/plain')
+    else:
+        await send_403(writer)
+
+async def reset_board(writer, is_authorised_request):
+    if is_authorised_request:
+        logger.log('Board reset requested', write_to_log=True)
+        await send_response(writer, 'Resetting board...', 'text/plain')
+        await asyncio.sleep(2)
+
+        machine.reset()
+    else:
+        await send_403(writer)
 
 async def send_response(writer, content, content_type, response_code='200 OK'):
     writer.write(b'HTTP/1.1 %s\r\n' % response_code)
@@ -71,11 +93,13 @@ async def send_response(writer, content, content_type, response_code='200 OK'):
 
     if content != '':
         writer.write(b'%s\r\n' % content)
-        writer.write(b'\r\n')
 
     await writer.drain()
     writer.close()
     await writer.wait_closed()
+
+async def send_403(writer):
+    await send_response(writer, '403 Forbidden', 'text/plain', '403 FORBIDDEN')
 
 async def serve(reader, writer):
     req = await reader.readline()
@@ -92,17 +116,15 @@ async def serve(reader, writer):
             break
 
     if 'POST /reset' in req:
-        if is_authorised_request:
-            await reset_board(writer)
-        else:
-            await send_response(writer, '403 Forbidden', 'text/plain', '403 FORBIDDEN')
+        await reset_board(writer, is_authorised_request)
     elif 'GET /log ' in req:
         await get_log(writer)
     elif 'DELETE /log ' in req:
-        if is_authorised_request:
-            await clear_log(writer)
-        else:
-            await send_response(writer, '403 Forbidden', 'text/plain', '403 FORBIDDEN')
+        await clear_log(writer, is_authorised_request)
+    elif 'GET /queue ' in req:
+        await get_queue(writer)
+    elif 'DELETE /queue ' in req:
+        await clear_queue(writer, is_authorised_request)
     elif 'GET / ' in req:
         await send_response(writer, sensor.get_current_data(), 'application/json')
     else:

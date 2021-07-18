@@ -24,7 +24,7 @@ async def read_sensor():
         logger.log('Reading sensor...')
 
         try:
-            sensor = dht.DHT22(Pin(26))
+            sensor = dht.DHT22(Pin(c['sensor_pin']))
             sensor.measure()
 
             temperature = sensor.temperature()

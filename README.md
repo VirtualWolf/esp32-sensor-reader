@@ -16,6 +16,8 @@ esp32-sensor-reader has four HTTP endpoints:
 * `GET /` — Get the current temperature and humidity values.
 * `GET /log` — View the log file that's written to when errors occur.
 * `DELETE /log` — Clear the log file; this requires the `X-API-Key` header to be set with the same value as what you're sending to the endpoint.
+* `GET /queue` — View the current queue of updates that failed to be sent and are awaiting re-sending.
+* `DELETE /queue` — Clear the queue; as above, it requires the `X-API-Key` header to be set.
 * `POST /reset` — Restarts the ESP32; as above, it requires the `X-API-Key` header to be set.
 
 ## Options

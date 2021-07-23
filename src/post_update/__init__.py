@@ -15,6 +15,6 @@ def send(payload):
         logger.log('Posted data, received status code: %s' % r.status_code)
 
         if r.status_code != 204:
-            raise Exception('Status was not 204')
+            raise Exception('Status was not 204, got %d' % r.status_code)
 
         r.close()

@@ -9,7 +9,7 @@ Updates that fail to be sent — if the server is down, or you have no internet 
 * [Pymakr](https://marketplace.visualstudio.com/items?itemName=pycom.Pymakr)
 
 ## Setup
-It requires a file called `config.json` at the root of the `src` directory, configured with your wifi network name and password, the GPIO pin that the DHT22 sensor is connected to, endpoint to periodically post data to, and the API key that protects that endpoint. An example file is given in [example.json](src/example.json).
+It requires a file called `config.json` at the root of the `src` directory, configured with your wifi network name and password, the GPIO pin that the DHT22 sensor is connected to, endpoint to periodically post data to, and the API key that protects that endpoint. An example file is given in [config.example.json](src/config.example.json).
 
 ## Endpoints
 esp32-sensor-reader has four HTTP endpoints:
